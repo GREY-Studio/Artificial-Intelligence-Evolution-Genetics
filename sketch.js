@@ -2,113 +2,128 @@
 // SKETCH
 
 // Internal Source: AI Evolution
+// https://github.com/GREY-Studio/Artificial-Intelligence-Evolution-Genetics
 // Date: 2017-08-16
 
 
 // Variables
-var $vehicles = [],
+// 01. An array of vehicles
+// 02. An array of "food"
+// 03. An array of "poison"
+// 04. How good is food, how bad is poison?
+// 05. Show additional info on DNA, Debugging tools
+var $population = [],
     $food = [],
     $poison = [],
+    $nutrition = [0.3, -1],
     $debug;
 
 // Setup function
 function setup() {
 
-  createCanvas((window.innerWidth - 60), (window.innerHeight - 105));
+  // Create canvas
+  var $canvas = createCanvas((window.innerWidth - 60), (window.innerHeight - 105));
+  $canvas.parent('canvas-container');
 
+  // Select debug tools
   $debug = select('#debug');
 
+  // Create a number of (10) vehicles
+  angleMode(RADIANS);
 
-  for (var i = 0; i < 10; i++) {
-    var x = random(width),
-        y = random(height);
-
-    $vehicles[i] = new Vehicle(x, y);
+  for(var i = 0; i < 10; i++) {
+    $population[i] = new Vehicle(width / 2, height / 2);
   }
 
-  // Generate food arrays
-  for (var i = 0; i < 40; i++) {
-
-    var x = random(width),
-        y = random(height);
-
-    $food.push(createVector(x, y));
+  // Start with some food
+  for(var i = 0; i < 70; i++) {
+    $food[i] = createVector(random(width), random(height));
   }
 
-  for (var i = 0; i < 20; i++) {
-
-    var x = random(width),
-        y = random(height);
-
-    $poison.push(createVector(x, y));
+  // Start with some poison
+  for(var i = 0; i < 40; i++) {
+    $poison[i] = createVector(random(width), random(height));
   }
 
 }
 
+// Add new vehicles by dragging mouse
+//function mouseDragged() {
+//  population.push(new Vehicle(mouseX, mouseY));
+//}
+
 // Draw function
 function draw() {
 
-  // Draw target
-
-  if(random(1) < 0.1) {
-    var x = random(width),
-        y = random(height);
-
-    $food.push(createVector(x, y));
-  }
-
-  if(random(1) < 0.01) {
-    var x = random(width),
-        y = random(height);
-
-    $poison.push(createVector(x, y));
-  }
-
-  //var $target = createVector(mouseX, mouseY);
-
   background(51);
-  fill(127);
-  stroke(200);
-  strokeWeight(2);
 
-  //ellipse($target.x, $target.y, 48, 48);
+  // (10%) Chance of new food
+  if(random(1) < 0.1) {
 
+    $food.push(createVector(random(width), random(height)));
 
-  // Draw (good) food
+  }
+
+  // (1%) Chance of new poison
+  if(random(1) < 0.01) {
+
+    $poison.push(createVector(random(width), random(height)));
+
+  }
+
+  // Go through all of the vehicles
+  for(var i = $population.length - 1; i >= 0; i--) {
+
+    var $v = $population[i];
+
+    // Eat the food (index 0)
+    $v.eat($food, 0);
+
+    // Eat the poison (index 1)
+    $v.eat($poison, 1);
+
+    // Check boundaries
+    $v.boundaries();
+
+    // Update and draw
+    $v.update();
+    $v.display();
+
+    // If the vehicle has died, remove
+    if($v.dead()) {
+
+      $food.push(createVector($v.position.x, $v.position.y));
+      $population.splice(i, 1);
+
+    } else {
+
+      // Every vehicle has a chance of cloning itself
+      var $child = $v.birth();
+
+      if ($child != null) {
+
+        $population.push($child);
+
+      }
+
+    }
+
+  }
+
+  // Draw all the food and all the poison
   for(var i = 0; i < $food.length; i++) {
+
     fill(152, 191, 110);
     noStroke();
-    ellipse($food[i].x, $food[i].y, 4, 4);
+    ellipse($food[i].x, $food[i].y, 4);
+
   }
 
-  // Draw (bad) food
   for(var i = 0; i < $poison.length; i++) {
+
     fill(255, 84, 70);
     noStroke();
-    ellipse($poison[i].x, $poison[i].y, 4, 4);
-  }
-
-  for (var i = $vehicles.length - 1; i >= 0; i--) {
-    $vehicles[i].boundaries();
-    $vehicles[i].behaviors($food, $poison);
-    $vehicles[i].update();
-    $vehicles[i].display();
-
-    var $newVehicle = $vehicles[i].clone();
-
-    if($newVehicle != null) {
-      $vehicles.push($newVehicle);
-    }
-
-    if($vehicles[i].dead()) {
-
-      var x = $vehicles[i].position.x,
-          y = $vehicles[i].position.y;
-
-      $food.push(createVector(x, y));
-
-      $vehicles.splice(i, 1);
-    }
+    ellipse($poison[i].x, $poison[i].y, 4);
 
   }
 
