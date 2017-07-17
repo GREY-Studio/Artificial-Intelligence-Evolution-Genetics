@@ -4,8 +4,9 @@
 // Internal Source: AI Evolution
 // Date: 2017-08-16
 
+var $mr = 0.01;
 
-function Vehicle(x, y) {
+function Vehicle(x, y, dna) {
 
   // Variables & Settings
   this.acceleration = createVector(0, 0);
@@ -20,14 +21,46 @@ function Vehicle(x, y) {
 
   // DNA
   this.dna = [];
-  // Food weight
-  this.dna[0] = random(-2, 2);
-  // Poison weight
-  this.dna[1] = random(-2, 2);
-  // Food perception
-  this.dna[2] = random(0, 100);
-  // Poison perception
-  this.dna[3] = random(0, 100);
+
+  if(dna === undefined) {
+
+    // Food weight
+    this.dna[0] = random(-2, 2);
+    // Poison weight
+    this.dna[1] = random(-2, 2);
+    // Food perception
+    this.dna[2] = random(0, 100);
+    // Poison perception
+    this.dna[3] = random(0, 100);
+
+  } else {
+
+    this.dna[0] = dna[0];
+
+    if(random(1) < $mr) {
+      this.dna[0] += random(-0.1, 0,1);
+    }
+
+    this.dna[1] = dna[1];
+
+    if(random(1) < $mr) {
+      this.dna[1] += random(-0.1, 0,1);
+    }
+
+    this.dna[2] = dna[2];
+
+    if(random(1) < $mr) {
+      this.dna[2] += random(-10, 10);
+    }
+
+    this.dna[3] = dna[3];
+
+    if(random(1) < $mr) {
+      this.dna[3] += random(-10, 10);
+    }
+
+  }
+
 
   // Method to update location
   this.update = function() {
@@ -57,8 +90,8 @@ function Vehicle(x, y) {
   // Method declaring behaviors
   this.behaviors = function(good, bad) {
 
-    var $steerG = this.eat(good, 0.2, this.dna[2]),
-        $steerB = this.eat(bad, -0.5, this.dna[3]);
+    var $steerG = this.eat(good, 0.3, this.dna[2]),
+        $steerB = this.eat(bad, -0.75, this.dna[3]);
 
     $steerG.mult(this.dna[0]);
     $steerB.mult(this.dna[1]);
@@ -68,28 +101,41 @@ function Vehicle(x, y) {
 
   }
 
+  // Method that clones vehicles
+  this.clone = function() {
+
+    if(random(1) < 0.001) {
+      return new Vehicle(this.position.x, this.position.y, this.dna);
+    } else {
+      return null;
+    }
+
+  }
+
   // Method that controll eating
   this.eat = function(list, nutrition, perception) {
 
     var $record = Infinity,
-        $closest = -1;
+        $closest = null;
 
-    for(var i = 0; i < list.length; i++) {
+    for(var i = list.length-1; i >= 0; i--) {
 
       var $distance = this.position.dist(list[i]);
 
-      if($distance < $record && $distance < perception) {
-        $record = $distance;
-        $closest = i;
+      if($distance < this.maxspeed) {
+        list.splice(i, 1);
+        this.health += nutrition;
+      } else {
+        if($distance < $record && $distance < perception) {
+          $record = $distance;
+          $closest = list[i];
+        }
       }
 
     }
 
-    if($record < 5) {
-      list.splice($closest, 1);
-      this.health += nutrition;
-    } else if($closest > -1) {
-      return this.seek(list[$closest]);
+    if($closest != null) {
+      return this.seek($closest);
     }
 
     return createVector(0, 0);
@@ -133,14 +179,17 @@ function Vehicle(x, y) {
     translate(this.position.x, this.position.y);
     rotate($angle);
 
-    stroke(152, 191, 110);
-    noFill();
-    line(0, 0, 0, -this.dna[0] * 20);
-    ellipse(0, 0, this.dna[2] * 2);
-    stroke(255, 84, 70);
-    line(0, 0, 0, -this.dna[1] * 20);
-    ellipse(0, 0, this.dna[3] * 2);
+    if($debug.checked()) {
 
+      stroke(152, 191, 110);
+      noFill();
+      line(0, 0, 0, -this.dna[0] * 20);
+      ellipse(0, 0, this.dna[2] * 2);
+      stroke(255, 84, 70);
+      line(0, 0, 0, -this.dna[1] * 20);
+      ellipse(0, 0, this.dna[3] * 2);
+
+    }
 
     var $red = color(255, 84, 70),
         $green = color(152, 191, 110),

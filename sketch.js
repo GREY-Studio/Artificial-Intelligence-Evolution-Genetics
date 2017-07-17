@@ -8,12 +8,17 @@
 // Variables
 var $vehicles = [],
     $food = [],
-    $poison = [];
+    $poison = [],
+    $debug;
 
 // Setup function
 function setup() {
 
   createCanvas((window.innerWidth - 60), (window.innerHeight - 105));
+
+  $debug = select('#debug');
+
+
   for (var i = 0; i < 10; i++) {
     var x = random(width),
         y = random(height);
@@ -45,7 +50,7 @@ function draw() {
 
   // Draw target
 
-  if(random(1) < 0.05) {
+  if(random(1) < 0.1) {
     var x = random(width),
         y = random(height);
 
@@ -73,14 +78,14 @@ function draw() {
   for(var i = 0; i < $food.length; i++) {
     fill(152, 191, 110);
     noStroke();
-    ellipse($food[i].x, $food[i].y, 8, 8);
+    ellipse($food[i].x, $food[i].y, 4, 4);
   }
 
   // Draw (bad) food
   for(var i = 0; i < $poison.length; i++) {
     fill(255, 84, 70);
     noStroke();
-    ellipse($poison[i].x, $poison[i].y, 8, 8);
+    ellipse($poison[i].x, $poison[i].y, 4, 4);
   }
 
   for (var i = $vehicles.length - 1; i >= 0; i--) {
@@ -89,7 +94,19 @@ function draw() {
     $vehicles[i].update();
     $vehicles[i].display();
 
+    var $newVehicle = $vehicles[i].clone();
+
+    if($newVehicle != null) {
+      $vehicles.push($newVehicle);
+    }
+
     if($vehicles[i].dead()) {
+
+      var x = $vehicles[i].position.x,
+          y = $vehicles[i].position.y;
+
+      $food.push(createVector(x, y));
+
       $vehicles.splice(i, 1);
     }
 
