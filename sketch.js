@@ -22,7 +22,7 @@ function setup() {
   }
 
   // Generate food arrays
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 40; i++) {
 
     var x = random(width),
         y = random(height);
@@ -30,7 +30,7 @@ function setup() {
     $food.push(createVector(x, y));
   }
 
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 20; i++) {
 
     var x = random(width),
         y = random(height);
@@ -44,6 +44,20 @@ function setup() {
 function draw() {
 
   // Draw target
+
+  if(random(1) < 0.05) {
+    var x = random(width),
+        y = random(height);
+
+    $food.push(createVector(x, y));
+  }
+
+  if(random(1) < 0.01) {
+    var x = random(width),
+        y = random(height);
+
+    $poison.push(createVector(x, y));
+  }
 
   //var $target = createVector(mouseX, mouseY);
 
@@ -69,10 +83,16 @@ function draw() {
     ellipse($poison[i].x, $poison[i].y, 8, 8);
   }
 
-  for (var i = 0; i < $vehicles.length; i++) {
+  for (var i = $vehicles.length - 1; i >= 0; i--) {
+    $vehicles[i].boundaries();
     $vehicles[i].behaviors($food, $poison);
     $vehicles[i].update();
     $vehicles[i].display();
+
+    if($vehicles[i].dead()) {
+      $vehicles.splice(i, 1);
+    }
+
   }
 
 }

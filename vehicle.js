@@ -11,7 +11,7 @@ function Vehicle(x, y) {
   this.acceleration = createVector(0, 0);
   this.velocity = createVector(0, -2);
   this.position = createVector(x, y);
-  this.r = 6;
+  this.r = 4;
   this.maxspeed = 5;
   this.maxforce = 0.5;
 
@@ -20,11 +20,19 @@ function Vehicle(x, y) {
 
   // DNA
   this.dna = [];
-  this.dna[0] = random(-5, 5);
-  this.dna[1] = random(-5, 5);
+  // Food weight
+  this.dna[0] = random(-2, 2);
+  // Poison weight
+  this.dna[1] = random(-2, 2);
+  // Food perception
+  this.dna[2] = random(0, 100);
+  // Poison perception
+  this.dna[3] = random(0, 100);
 
   // Method to update location
   this.update = function() {
+
+    this.health -= 0.01;
 
     // Update velocity
     this.velocity.add(this.acceleration);
@@ -49,8 +57,8 @@ function Vehicle(x, y) {
   // Method declaring behaviors
   this.behaviors = function(good, bad) {
 
-    var $steerG = this.eat(good),
-        $steerB = this.eat(bad);
+    var $steerG = this.eat(good, 0.2, this.dna[2]),
+        $steerB = this.eat(bad, -0.5, this.dna[3]);
 
     $steerG.mult(this.dna[0]);
     $steerB.mult(this.dna[1]);
@@ -61,7 +69,7 @@ function Vehicle(x, y) {
   }
 
   // Method that controll eating
-  this.eat = function(list) {
+  this.eat = function(list, nutrition, perception) {
 
     var $record = Infinity,
         $closest = -1;
@@ -70,7 +78,7 @@ function Vehicle(x, y) {
 
       var $distance = this.position.dist(list[i]);
 
-      if($distance < $record) {
+      if($distance < $record && $distance < perception) {
         $record = $distance;
         $closest = i;
       }
@@ -79,6 +87,7 @@ function Vehicle(x, y) {
 
     if($record < 5) {
       list.splice($closest, 1);
+      this.health += nutrition;
     } else if($closest > -1) {
       return this.seek(list[$closest]);
     }
@@ -108,6 +117,11 @@ function Vehicle(x, y) {
 
   }
 
+  // Method declaring vehicle as dead
+  this.dead = function() {
+    return (this.health < 0);
+  }
+
   // Graphical elements
   this.display = function() {
 
@@ -120,13 +134,21 @@ function Vehicle(x, y) {
     rotate($angle);
 
     stroke(152, 191, 110);
+    noFill();
     line(0, 0, 0, -this.dna[0] * 20);
+    ellipse(0, 0, this.dna[2] * 2);
     stroke(255, 84, 70);
     line(0, 0, 0, -this.dna[1] * 20);
+    ellipse(0, 0, this.dna[3] * 2);
+
+
+    var $red = color(255, 84, 70),
+        $green = color(152, 191, 110),
+        $color = lerpColor($red, $green, this.health);
 
     // Geometry
-    fill(127);
-    stroke(200);
+    fill($color);
+    stroke($color);
     strokeWeight(2);
 
     beginShape();
@@ -137,6 +159,32 @@ function Vehicle(x, y) {
 
     pop();
 
+  }
+
+  // A force to keep vehicles on screen
+  this.boundaries = function() {
+
+    var $distanceEdge = 10;
+    var $desired = null;
+
+    if (this.position.x < $distanceEdge) {
+      $desired = createVector(this.maxspeed, this.velocity.y);
+    } else if (this.position.x > width - $distanceEdge) {
+      $desired = createVector(-this.maxspeed, this.velocity.y);
+    }
+
+    if (this.position.y < $distanceEdge) {
+      $desired = createVector(this.velocity.x, this.maxspeed);
+    } else if (this.position.y > height - $distanceEdge) {
+      $desired = createVector(this.velocity.x, -this.maxspeed);
+    }
+
+    if ($desired !== null) {
+      $desired.setMag(this.maxspeed);
+      var $steer = p5.Vector.sub($desired, this.velocity);
+      $steer.limit(this.maxforce);
+      this.applyForce($steer);
+    }
   }
 
 }
